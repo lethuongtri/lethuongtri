@@ -15,7 +15,6 @@
   </ItemGroup>
 </Project>
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
 using ExcelDna.Integration;
 using ExcelDna.IntelliSense;
 using System.Runtime.InteropServices;
@@ -27,6 +26,7 @@ namespace KRExcel
     public static class CommonDeclaration
     {
         public const double MaxDegMinSec = 60.0;
+        public const double KRTolerance = 0.000001;
         public const string DegreeSymbol = "°";
         public const string MinuteSymbol = "'";
         public const string SecondSymbol = "\"";
@@ -95,44 +95,69 @@ namespace KRExcel
                 }
             }
             
-            double minuteP = (deg - System.Math.Truncate(deg)) * CommonDeclaration.MaxDegMinSec;
-            double secondP = (minuteP - System.Math.Truncate(minuteP)) * CommonDeclaration.MaxDegMinSec;
+            double minute = (deg - System.Math.Truncate(deg)) * CommonDeclaration.MaxDegMinSec;
+            double second = (minute - System.Math.Truncate(minute)) * CommonDeclaration.MaxDegMinSec;
 
             if (!isHighPre)
             {
                 deg = System.Math.Truncate(deg);
-                minuteP = System.Math.Round(minuteP);
 
-                if (minuteP.Equals(CommonDeclaration.MaxDegMinSec))
+                //System.Math.Round(second).Equals(CommonDeclaration.MaxDegMinSec / 2.0)
+                //second.Equals(CommonDeclaration.MaxDegMinSec / 2.0)
+                //second >= CommonDeclaration.MaxDegMinSec / 2.0)
+                if (System.Math.Abs(second - CommonDeclaration.MaxDegMinSec / 2.0) <= CommonDeclaration.KRTolerance)
+                {
+                    minute = System.Math.Truncate(minute) + 1.0;
+                }
+                else
+                {
+                    minute = System.Math.Round(minute, 0, MidpointRounding.AwayFromZero);
+                }
+
+                if (minute.Equals(CommonDeclaration.MaxDegMinSec))
                 {
                     deg += 1.0;
-                    minuteP = 0.0;
+                    minute = 0.0;
                 }
 
                 retVal = deg.ToString() + CommonDeclaration.DegreeSymbol +
-                         minuteP.ToString() + CommonDeclaration.MinuteSymbol;
+                         minute.ToString() + CommonDeclaration.MinuteSymbol;
             }
             else
             {
                 deg = System.Math.Truncate(deg);
-                minuteP = System.Math.Truncate(minuteP);
-                secondP = System.Math.Round(secondP);
+                minute = System.Math.Truncate(minute);
 
-                if (secondP.Equals(CommonDeclaration.MaxDegMinSec))
+                //double secondTail = System.Math.Round(second - System.Math.Truncate(second), 1 , 
+                //    MidpointRounding.AwayFromZero);
+
+                double secondTail = second - System.Math.Truncate(second);
+
+                //secondTail.Equals(0.5)
+                if (System.Math.Abs(secondTail - 0.5) <= CommonDeclaration.KRTolerance)
                 {
-                    minuteP += 1.0;
-                    secondP = 0.0;
+                    second = System.Math.Truncate(second) + 1.0;
+                }
+                else
+                {
+                    second = System.Math.Round(second, 0, MidpointRounding.AwayFromZero);
                 }
 
-                if (minuteP.Equals(CommonDeclaration.MaxDegMinSec))
+                if (second.Equals(CommonDeclaration.MaxDegMinSec))
+                {
+                    minute += 1.0;
+                    second = 0.0;
+                }
+
+                if (minute.Equals(CommonDeclaration.MaxDegMinSec))
                 {
                     deg += 1.0;
-                    minuteP = 0.0;
+                    minute = 0.0;
                 }
 
                 retVal = deg.ToString() + CommonDeclaration.DegreeSymbol +
-                         minuteP.ToString() + CommonDeclaration.MinuteSymbol +
-                         secondP.ToString() + CommonDeclaration.SecondSymbol;
+                         minute.ToString() + CommonDeclaration.MinuteSymbol +
+                         second.ToString() + CommonDeclaration.SecondSymbol;
             }
 
             return retVal;
