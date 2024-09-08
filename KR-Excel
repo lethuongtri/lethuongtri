@@ -19,9 +19,8 @@ using ExcelDna.Integration;
 using ExcelDna.IntelliSense;
 using System.Runtime.InteropServices;
 using ExcelDna.Integration.CustomUI;
-using KRExcel;
 
-namespace KRExcel
+namespace KRExcel.Utils
 {
     public static class CommonDeclaration
     {
@@ -31,34 +30,103 @@ namespace KRExcel
         public const string MinuteSymbol = "'";
         public const string SecondSymbol = "\"";
         public const string Owner = "KR-Excel";
+        public const string Designer = "LeThuongTri";
+
+        
     }
 
+    public static class HelpMethods
+    {
+        public static double RadianToDegree(double angRad)
+        {
+            return angRad * 180.0 / System.Math.PI;
+        }
+
+        public static double DegreeToRadian(double angDeg)
+        {
+            return angDeg * System.Math.PI / 180.0;
+        }
+    }
+}
+
+namespace KRExcel.GeneralCommands
+{
+    
     public static class Commands
     {
-        [ExcelFunction(Description = "My first .NET function")]
-        public static string SayHello(string name)
+        [ExcelFunction(Description = "Convert slope(%) to angle in degrees/ radians.")]
+        public static object SlopeToAngle(
+            [ExcelArgument(Name = "Slope(%)", Description = "Slope(%) to convert.")]
+            object slopeObj,
+            [ExcelArgument(Name = "Return degree", Description = "Return value's type." +
+                                                                "\nTRUE: return value in degrees." +
+                                                               "\nFALSE: return value in radians." +
+                                                               "\nBy default is TRUE")]
+            object retDegObj)
         {
-            return "Hello " + name;
+            //Initialize default return value:
+            double retVal = 0.0;
+
+            #region [Check input]
+
+            //Check slope:
+            double slope = 0.0;
+            if (slopeObj is not double || slopeObj is ExcelDna.Integration.ExcelMissing)
+            {
+                //throw new ArgumentException();
+                return ExcelDna.Integration.ExcelError.ExcelErrorValue;
+            }
+            else
+            {
+                slope = System.Convert.ToDouble(slopeObj);
+            }
+
+            //Check return type's flag:
+            bool isDeg = false;
+            if (retDegObj is ExcelDna.Integration.ExcelMissing)
+            {
+                isDeg = true;
+            }
+            else
+            {
+                if (retDegObj is not bool)
+                {
+                    //throw new ArgumentException();
+                    return ExcelDna.Integration.ExcelError.ExcelErrorValue;
+                }
+                else
+                {
+                    isDeg = System.Convert.ToBoolean(retDegObj);
+                }
+            }
+            #endregion
+
+            //Calculate input:
+            double tang = slope / 100.0;
+            double angRad = System.Math.Atan(tang);
+            double angDeg = KRExcel.Utils.HelpMethods.RadianToDegree(angRad);
+
+            //Calculate return value:
+            if (isDeg)
+            {
+                retVal = angDeg;
+            }
+            else
+            {
+                retVal = angRad;
+            }
+
+            return retVal;
         }
 
-        [ExcelFunction(Description = "A useful test function that adds two numbers, and returns the sum.")]
-        public static double AddThem(
-            [ExcelArgument(Name = "Augend", Description = "is the first number, to which will be added")]
-            double v1,
-            [ExcelArgument(Name = "Addend", Description = "is the second number that will be added")]
-            double v2)
-        {
-            return v1 + v2;
-        }
-
-        [ExcelFunction(Description = "Convert angle(degree) to format _°_'_''.")]
+        [ExcelFunction(Description = "Convert angle(degrees) to format _°_'_''.")]
         public static object AngleToDMS(
-            [ExcelArgument(Name = "Angle", Description = "Angle to convert.")]
+            [ExcelArgument(Name = "Angle", Description = "Angle(degrees) to convert.")]
             object angle,
             [ExcelArgument(Name = "High precision", Description = "Precision level." +
-                                                                "\nTrue: return value in _°_'_''" +
-                                                               "\nFalse: return value in _°_'" +
-                                                               "\nBy default is False")]
+                                                                "\nTRUE: return value in _°_'_''." +
+                                                               "\nFALSE: return value in _°_'." +
+                                                               "\nBy default is FALSE.")]
             object highPrecision)
         {
             //Initialize return value:
@@ -95,8 +163,8 @@ namespace KRExcel
                 }
             }
             
-            double minute = (deg - System.Math.Truncate(deg)) * CommonDeclaration.MaxDegMinSec;
-            double second = (minute - System.Math.Truncate(minute)) * CommonDeclaration.MaxDegMinSec;
+            double minute = (deg - System.Math.Truncate(deg)) * KRExcel.Utils.CommonDeclaration.MaxDegMinSec;
+            double second = (minute - System.Math.Truncate(minute)) * KRExcel.Utils.CommonDeclaration.MaxDegMinSec;
 
             if (!isHighPre)
             {
@@ -105,7 +173,7 @@ namespace KRExcel
                 //System.Math.Round(second).Equals(CommonDeclaration.MaxDegMinSec / 2.0)
                 //second.Equals(CommonDeclaration.MaxDegMinSec / 2.0)
                 //second >= CommonDeclaration.MaxDegMinSec / 2.0)
-                if (System.Math.Abs(second - CommonDeclaration.MaxDegMinSec / 2.0) <= CommonDeclaration.KRTolerance)
+                if (System.Math.Abs(second - KRExcel.Utils.CommonDeclaration.MaxDegMinSec / 2.0) <= KRExcel.Utils.CommonDeclaration.KRTolerance)
                 {
                     minute = System.Math.Truncate(minute) + 1.0;
                 }
@@ -114,14 +182,14 @@ namespace KRExcel
                     minute = System.Math.Round(minute, 0, MidpointRounding.AwayFromZero);
                 }
 
-                if (minute.Equals(CommonDeclaration.MaxDegMinSec))
+                if (minute.Equals(KRExcel.Utils.CommonDeclaration.MaxDegMinSec))
                 {
                     deg += 1.0;
                     minute = 0.0;
                 }
 
-                retVal = deg.ToString() + CommonDeclaration.DegreeSymbol +
-                         minute.ToString() + CommonDeclaration.MinuteSymbol;
+                retVal = deg.ToString() + KRExcel.Utils.CommonDeclaration.DegreeSymbol +
+                         minute.ToString() + KRExcel.Utils.CommonDeclaration.MinuteSymbol;
             }
             else
             {
@@ -134,7 +202,7 @@ namespace KRExcel
                 double secondTail = second - System.Math.Truncate(second);
 
                 //secondTail.Equals(0.5)
-                if (System.Math.Abs(secondTail - 0.5) <= CommonDeclaration.KRTolerance)
+                if (System.Math.Abs(secondTail - 0.5) <= KRExcel.Utils.CommonDeclaration.KRTolerance)
                 {
                     second = System.Math.Truncate(second) + 1.0;
                 }
@@ -143,24 +211,58 @@ namespace KRExcel
                     second = System.Math.Round(second, 0, MidpointRounding.AwayFromZero);
                 }
 
-                if (second.Equals(CommonDeclaration.MaxDegMinSec))
+                if (second.Equals(KRExcel.Utils.CommonDeclaration.MaxDegMinSec))
                 {
                     minute += 1.0;
                     second = 0.0;
                 }
 
-                if (minute.Equals(CommonDeclaration.MaxDegMinSec))
+                if (minute.Equals(KRExcel.Utils.CommonDeclaration.MaxDegMinSec))
                 {
                     deg += 1.0;
                     minute = 0.0;
                 }
 
-                retVal = deg.ToString() + CommonDeclaration.DegreeSymbol +
-                         minute.ToString() + CommonDeclaration.MinuteSymbol +
-                         second.ToString() + CommonDeclaration.SecondSymbol;
+                retVal = deg.ToString() + KRExcel.Utils.CommonDeclaration.DegreeSymbol +
+                         minute.ToString() + KRExcel.Utils.CommonDeclaration.MinuteSymbol +
+                         second.ToString() + KRExcel.Utils.CommonDeclaration.SecondSymbol;
             }
 
             return retVal;
+        }
+    }
+
+    public class IntelliSenseAddIn : IExcelAddIn
+    {
+        public void AutoOpen()
+        {
+            IntelliSenseServer.Install();
+        }
+        public void AutoClose()
+        {
+            IntelliSenseServer.Uninstall();
+        }
+    }
+}
+
+namespace KRExcel.Sample
+{
+    public static class Commands
+    {
+        [ExcelFunction(Description = "My first .NET function")]
+        public static string SayHello(string name)
+        {
+            return "Hello " + name;
+        }
+
+        [ExcelFunction(Description = "A useful test function that adds two numbers, and returns the sum.")]
+        public static double AddThem(
+            [ExcelArgument(Name = "Augend", Description = "is the first number, to which will be added")]
+            double v1,
+            [ExcelArgument(Name = "Addend", Description = "is the second number that will be added")]
+            double v2)
+        {
+            return v1 + v2;
         }
     }
 
@@ -223,21 +325,9 @@ namespace KRExcel
                 throw new ArgumentException();  // Or defaultValue or whatever
         }
     }
-
-    public class IntelliSenseAddIn : IExcelAddIn
-    {
-        public void AutoOpen()
-        {
-            IntelliSenseServer.Install();
-        }
-        public void AutoClose()
-        {
-            IntelliSenseServer.Uninstall();
-        }
-    }
 }
 
-namespace Ribbon
+namespace KRExcel.Ribbon
 {
     public static class Functions
     {
@@ -272,7 +362,7 @@ namespace Ribbon
 
         public void OnButtonPressed(IRibbonControl control)
         {
-            MessageBox.Show("Hello from control " + control.Id, CommonDeclaration.Owner ,
+            MessageBox.Show("Hello from control " + control.Id, KRExcel.Utils.CommonDeclaration.Owner ,
                             MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
     }
