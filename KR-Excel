@@ -51,7 +51,6 @@ namespace KRExcel.Utils
 
 namespace KRExcel.GeneralCommands
 {
-    
     public static class Commands
     {
         [ExcelFunction(Description = "Convert slope(%) to angle in degrees/ radians.")]
@@ -346,7 +345,7 @@ namespace KRExcel.Ribbon
                   <customUI xmlns='http://schemas.microsoft.com/office/2006/01/customui'>
                   <ribbon>
                     <tabs>
-                      <tab id='krExcelTab' label='KR-Excel'>
+                      <tab id='krExcelTab' label='KR-Excel' insertBeforeMso='TabHome'>
                         <group id='krUtilGrp' label='KR-Utility'>
                           <button id='projectBtn' label='物件管理' 
                                                   imageMso='ControlProperties'
@@ -362,7 +361,8 @@ namespace KRExcel.Ribbon
 
         public void OnButtonPressed(IRibbonControl control)
         {
-            MessageBox.Show("Hello from control " + control.Id, KRExcel.Utils.CommonDeclaration.Owner ,
+            MessageBox.Show("Hello from control " + control.Id, 
+                            KRExcel.Utils.CommonDeclaration.Owner ,
                             MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
     }
